@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "vnfs.h"
+
 #define BEGIN_TEST() int check_counter = 0
 #define END_TEST() return 0
 
