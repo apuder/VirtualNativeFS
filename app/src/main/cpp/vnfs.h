@@ -4,7 +4,7 @@
 
 #include <sys/stat.h>
 
-typedef int VNFS_FILE;
+typedef void VNFS_FILE;
 
 extern int VNFS_EOF;
 

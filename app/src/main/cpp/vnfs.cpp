@@ -5,8 +5,32 @@
 
 int VNFS_EOF = 0xdeadbeef;
 
+static JavaVM *jvm;
+static jclass clazzVNFS;
+static jmethodID fopenMethodId;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_puder_virtualnativefs_VirtualNativeFS_init(JNIEnv *env, jclass type) {
+    clazzVNFS = (jclass) env->NewGlobalRef(type);
+    int status = env->GetJavaVM(&jvm);
+    fopenMethodId = env->GetStaticMethodID(type, "fopen", "(Ljava/lang/String;Ljava/lang/String;)I");
+}
+
+static JNIEnv* getEnv() {
+    JNIEnv *env;
+    jvm->AttachCurrentThread(&env, NULL);
+    return env;
+}
+
 FILE *vnfs_fopen(const char *filename, const char *mode) {
-    return NULL;
+    JNIEnv* env = getEnv();
+    jstring jfilename = env->NewStringUTF(filename);
+    jstring jmode = env->NewStringUTF(mode);
+    jint file = env->CallStaticIntMethod(clazzVNFS, fopenMethodId, jfilename, jmode);
+    env->DeleteLocalRef(jfilename);
+    env->DeleteLocalRef(jmode);
+    return (FILE*) file;
 }
 
 int vnfs_fclose(FILE *stream) {

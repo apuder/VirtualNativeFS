@@ -8,7 +8,8 @@ import android.util.Log;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class VirtualNativeFSTest {
@@ -16,7 +17,7 @@ public class VirtualNativeFSTest {
     final private static String TAG = "VirtualNativeFSTest";
 
     static {
-        System.loadLibrary("vnfs");
+        VirtualNativeFS.touch();
     }
 
     native private static int testFileNotExists();
