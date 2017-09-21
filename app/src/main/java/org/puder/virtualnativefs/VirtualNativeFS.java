@@ -1,0 +1,1 @@
+package org.puder.virtualnativefs;public class VirtualNativeFS {    static {        System.loadLibrary("native-lib");    }    native public static String sayHello();}
