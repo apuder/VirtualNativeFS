@@ -23,7 +23,7 @@ struct vnfs_stat {
 #define fwrite vnfs_fwrite
 #define fread vnfs_fread
 #define fprintf vnfs_fprintf
-#define ftruncate vnfs_ftruncate
+#define truncate vnfs_truncate
 #define fgetc vnfs_fgetc
 #define fputc vnfs_fputc
 #define getc fgetc
@@ -44,7 +44,7 @@ size_t vnfs_fwrite(const void *ptr, size_t size, size_t nitems,
 size_t vnfs_fread(void *ptr, size_t size, size_t nitems,
                   FILE *stream);
 int vnfs_fprintf(FILE *stream, const char *format, ...);
-int vnfs_ftruncate(int fildes, off_t length);
+int vnfs_truncate(const char* path, off_t length);
 int vnfs_fgetc(FILE *stream);
 int vnfs_fputc(int c, FILE *stream);
 int vnfs_fputs(const char *s, FILE *stream);
