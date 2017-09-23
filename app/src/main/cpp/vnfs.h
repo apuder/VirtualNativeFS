@@ -3,19 +3,28 @@
 #define __VNFS_H__
 
 #include <sys/stat.h>
+#include <jni.h>
 
 typedef void VNFS_FILE;
+typedef jlong vnfs_size_t;
 
+extern int vnfs_errno;
 extern int VNFS_EOF;
 
 struct vnfs_stat {
     int st_size;
 };
 
+#define errno vnfs_errno
+#define size_t vnfs_size_t
+
+#define ENOENT 1
+
 #define FILE VNFS_FILE
 #define EOF VNFS_EOF
 #define fopen vnfs_fopen
 #define fclose vnfs_fclose
+#define remove vnfs_remove
 #define ftell vnfs_ftell
 #define fseek vnfs_fseek
 #define rewind vnfs_rewind
@@ -35,6 +44,7 @@ struct vnfs_stat {
 
 FILE *vnfs_fopen(const char *filename, const char *mode);
 int vnfs_fclose(FILE *stream);
+int remove(const char* path);
 long vnfs_ftell(FILE *stream);
 int vnfs_fseek(FILE *stream, long offset, int whence);
 void vnfs_rewind(FILE *stream);

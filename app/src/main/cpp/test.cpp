@@ -39,6 +39,7 @@ JNIEXPORT jint JNICALL
 Java_org_puder_virtualnativefs_VirtualNativeFSTest_testFileNotExists(JNIEnv *env, jclass type) {
     BEGIN_TEST();
     CHECK_FILE_NOT_EXIST("/sdcard/does_not_exist");
+    CHECK(errno == ENOENT);
     END_TEST();
 }
 

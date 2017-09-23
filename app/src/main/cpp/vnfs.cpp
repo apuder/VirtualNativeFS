@@ -3,21 +3,18 @@
 
 #include "vnfs.h"
 
+int vnfs_errno = 0;
 int VNFS_EOF = 0xdeadbeef;
 
 static JavaVM *jvm;
 static jclass clazzVNFS;
+static jfieldID errnoFieldID;
 static jmethodID fopenMethodId;
 static jmethodID fcloseMethodId;
+static jmethodID removeMethodId;
+static jmethodID fwriteMethodId;
+static jmethodID freadMethodId;
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_org_puder_virtualnativefs_VirtualNativeFS_init(JNIEnv *env, jclass type) {
-    clazzVNFS = (jclass) env->NewGlobalRef(type);
-    int status = env->GetJavaVM(&jvm);
-    fopenMethodId = env->GetStaticMethodID(type, "fopen", "(Ljava/lang/String;Ljava/lang/String;)I");
-    fcloseMethodId = env->GetStaticMethodID(type, "fclose", "(I)I");
-}
 
 static JNIEnv* getEnv() {
     JNIEnv *env;
@@ -25,19 +22,46 @@ static JNIEnv* getEnv() {
     return env;
 }
 
+static void update_errno() {
+    vnfs_errno = getEnv()->GetStaticIntField(clazzVNFS, errnoFieldID);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_puder_virtualnativefs_VirtualNativeFS_init(JNIEnv *env, jclass type) {
+    clazzVNFS = (jclass) env->NewGlobalRef(type);
+    int status = env->GetJavaVM(&jvm);
+    errnoFieldID = env->GetStaticFieldID(type, "errno", "I");
+    fopenMethodId = env->GetStaticMethodID(type, "fopen", "(Ljava/lang/String;Ljava/lang/String;)J");
+    fcloseMethodId = env->GetStaticMethodID(type, "fclose", "(J)I");
+    removeMethodId = env->GetStaticMethodID(type, "remove", "(Ljava/lang/String;)I");
+    fwriteMethodId = env->GetStaticMethodID(type, "fwrite", "([BJJJ)J");
+    freadMethodId = env->GetStaticMethodID(type, "fread", "([BJJJ)J");
+}
+
 FILE *vnfs_fopen(const char *filename, const char *mode) {
     JNIEnv* env = getEnv();
     jstring jfilename = env->NewStringUTF(filename);
     jstring jmode = env->NewStringUTF(mode);
-    jint file = env->CallStaticIntMethod(clazzVNFS, fopenMethodId, jfilename, jmode);
+    jlong file = env->CallStaticLongMethod(clazzVNFS, fopenMethodId, jfilename, jmode);
     env->DeleteLocalRef(jfilename);
     env->DeleteLocalRef(jmode);
+    update_errno();
     return (FILE*) file;
 }
 
 int vnfs_fclose(FILE *stream) {
     JNIEnv* env = getEnv();
-    jint err = env->CallStaticIntMethod(clazzVNFS, fcloseMethodId, (jint) stream);
+    jint err = env->CallStaticIntMethod(clazzVNFS, fcloseMethodId, (jlong) stream);
+    return err;
+}
+
+int remove(const char* path) {
+    JNIEnv* env = getEnv();
+    jstring jpath = env->NewStringUTF(path);
+    jint err = env->CallStaticIntMethod(clazzVNFS, removeMethodId, jpath);
+    env->DeleteLocalRef(jpath);
+    update_errno();
     return err;
 }
 
@@ -58,13 +82,25 @@ int vnfs_fflush(FILE *stream) {
 }
 
 size_t vnfs_fwrite(const void *ptr, size_t size, size_t nitems,
-              FILE *stream) {
-    return 0;
+                   FILE *stream) {
+    JNIEnv* env = getEnv();
+    long n = size * nitems;
+    jbyteArray data = env->NewByteArray(n);
+    env->SetByteArrayRegion(data, 0, n, (jbyte*) ptr);
+    jlong len = env->CallStaticLongMethod(clazzVNFS, fwriteMethodId, data, size, nitems, (jlong) stream);
+    env->DeleteLocalRef(data);
+    return len;
 }
 
 size_t vnfs_fread(void *ptr, size_t size, size_t nitems,
              FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    long n = size * nitems;
+    jbyteArray data = env->NewByteArray(n);
+    jlong len = env->CallStaticLongMethod(clazzVNFS, freadMethodId, data, size, nitems, (jlong) stream);
+    env->GetByteArrayRegion(data, 0, n, (jbyte*) ptr);
+    env->DeleteLocalRef(data);
+    return len;
 }
 
 int vnfs_fprintf(FILE *stream, const char *format, ...) {

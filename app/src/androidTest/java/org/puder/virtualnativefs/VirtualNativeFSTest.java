@@ -17,7 +17,7 @@ public class VirtualNativeFSTest {
     final private static String TAG = "VirtualNativeFSTest";
 
     static {
-        VirtualNativeFS.touch();
+        VirtualNativeFS.init(new VolatileVNFS());
     }
 
     native private static int testFileNotExists();
