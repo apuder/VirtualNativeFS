@@ -64,7 +64,7 @@ public class VolatileVNFS implements VirtualNativeFSAPI {
         long inode = directory.get(filename);
         File file = files.get(inode);
         int filePosition = 0;
-        if (writeMode && appendMode) {
+        if (appendMode) {
             filePosition = file.content.size();
         } else if (writeMode) {
             file.content.clear();
@@ -102,17 +102,33 @@ public class VolatileVNFS implements VirtualNativeFSAPI {
 
     @Override
     public long ftell(long stream) {
-        return 0;
+        FileDescriptor fd = fileDescriptors.get(stream);
+        return fd.pos;
     }
 
     @Override
     public int fseek(long stream, long offset, int whence) {
+        FileDescriptor fd = fileDescriptors.get(stream);
+        long pos = 0;
+        switch(whence) {
+            case 0:
+                pos = offset;
+                break;
+            case 1:
+                pos = fd.pos + offset;
+                break;
+            case 2:
+                pos = fd.content.size() + offset;
+                break;
+        }
+        if (pos < 0) {
+            pos = 0;
+        }
+        if (pos > fd.content.size()) {
+            pos = fd.content.size();
+        }
+        fd.pos = (int) pos;
         return 0;
-    }
-
-    @Override
-    public void rewind(long stream) {
-
     }
 
     @Override
@@ -125,7 +141,11 @@ public class VolatileVNFS implements VirtualNativeFSAPI {
         long n = size * nitems;
         FileDescriptor fd = fileDescriptors.get(stream);
         for (int i = 0; i < n; i++) {
-            fd.content.add(fd.pos++, ptr[i]);
+            if (fd.pos == fd.content.size()) {
+                fd.content.add(fd.pos++, ptr[i]);
+            } else {
+                fd.content.set(fd.pos++, ptr[i]);
+            }
         }
         return n;
     }
@@ -150,17 +170,46 @@ public class VolatileVNFS implements VirtualNativeFSAPI {
 
     @Override
     public int truncate(String path, int length) {
+        if (!directory.containsKey(path)) {
+            errno = 1;
+            return -1;
+        }
+        long inode = directory.get(path);
+        File file = files.get(inode);
+        int pos = file.content.size();
+        if (pos >= length) {
+            while (pos != length) {
+                pos--;
+                file.content.remove(pos);
+            }
+        } else {
+            while (pos != length) {
+                pos++;
+                file.content.add((byte) 0);
+            }
+        }
+        errno = 0;
         return 0;
     }
 
     @Override
     public int fgetc(long stream) {
-        return 0;
+        FileDescriptor fd = fileDescriptors.get(stream);
+        if (fd.pos == fd.content.size()) {
+            return -1;
+        }
+        return fd.content.get(fd.pos++);
     }
 
     @Override
     public int fputc(int c, long stream) {
-        return 0;
+        FileDescriptor fd = fileDescriptors.get(stream);
+        if (fd.pos == fd.content.size()) {
+            fd.content.add(fd.pos++, (byte) c);
+        } else {
+            fd.content.set(fd.pos++, (byte) c);
+        }
+        return c;
     }
 
     @Override

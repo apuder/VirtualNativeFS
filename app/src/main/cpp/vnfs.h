@@ -7,6 +7,7 @@
 
 typedef void VNFS_FILE;
 typedef jlong vnfs_size_t;
+typedef jint vnfs_off_t;
 
 extern int vnfs_errno;
 extern int VNFS_EOF;
@@ -17,8 +18,13 @@ struct vnfs_stat {
 
 #define errno vnfs_errno
 #define size_t vnfs_size_t
+#define off_t vnfs_off_t
 
 #define ENOENT 1
+
+#define SEEK_SET 0
+#define SEEK_CUR 1
+#define SEEK_END 2
 
 #define FILE VNFS_FILE
 #define EOF VNFS_EOF

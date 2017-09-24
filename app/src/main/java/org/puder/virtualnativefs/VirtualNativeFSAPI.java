@@ -7,7 +7,6 @@ public interface VirtualNativeFSAPI {
     int fclose(long file);
     long ftell(long stream);
     int fseek(long stream, long offset, int whence);
-    void rewind(long stream);
     int fflush(long stream);
     long fwrite(byte[] ptr, long size, long nitems, long stream);
     long fread(byte[] ptr, long size, long nitems, long stream);

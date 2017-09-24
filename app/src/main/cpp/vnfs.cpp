@@ -4,7 +4,7 @@
 #include "vnfs.h"
 
 int vnfs_errno = 0;
-int VNFS_EOF = 0xdeadbeef;
+int VNFS_EOF = -1;
 
 static JavaVM *jvm;
 static jclass clazzVNFS;
@@ -14,6 +14,11 @@ static jmethodID fcloseMethodId;
 static jmethodID removeMethodId;
 static jmethodID fwriteMethodId;
 static jmethodID freadMethodId;
+static jmethodID fgetcMethodId;
+static jmethodID fputcMethodId;
+static jmethodID ftellMethodId;
+static jmethodID fseekMethodId;
+static jmethodID truncateMethodId;
 
 
 static JNIEnv* getEnv() {
@@ -37,6 +42,11 @@ Java_org_puder_virtualnativefs_VirtualNativeFS_init(JNIEnv *env, jclass type) {
     removeMethodId = env->GetStaticMethodID(type, "remove", "(Ljava/lang/String;)I");
     fwriteMethodId = env->GetStaticMethodID(type, "fwrite", "([BJJJ)J");
     freadMethodId = env->GetStaticMethodID(type, "fread", "([BJJJ)J");
+    fgetcMethodId = env->GetStaticMethodID(type, "fgetc", "(J)I");
+    fputcMethodId = env->GetStaticMethodID(type, "fputc", "(IJ)I");
+    ftellMethodId = env->GetStaticMethodID(type, "ftell", "(J)J");
+    fseekMethodId = env->GetStaticMethodID(type, "fseek", "(JJI)I");
+    truncateMethodId = env->GetStaticMethodID(type, "truncate", "(Ljava/lang/String;I)I");
 }
 
 FILE *vnfs_fopen(const char *filename, const char *mode) {
@@ -66,15 +76,17 @@ int remove(const char* path) {
 }
 
 long vnfs_ftell(FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    return env->CallStaticLongMethod(clazzVNFS, ftellMethodId, (jlong) stream);
 }
 
 int vnfs_fseek(FILE *stream, long offset, int whence) {
-    return 0;
+    JNIEnv* env = getEnv();
+    return env->CallStaticIntMethod(clazzVNFS, fseekMethodId, (jlong) stream, (jlong) offset, whence);
 }
 
 void vnfs_rewind(FILE *stream) {
-
+    vnfs_fseek(stream, 0, SEEK_SET);
 }
 
 int vnfs_fflush(FILE *stream) {
@@ -108,15 +120,22 @@ int vnfs_fprintf(FILE *stream, const char *format, ...) {
 }
 
 int vnfs_truncate(const char* path, off_t length) {
-    return 0;
+    JNIEnv* env = getEnv();
+    jstring jpath = env->NewStringUTF(path);
+    jint err = env->CallStaticIntMethod(clazzVNFS, truncateMethodId, jpath, length);
+    env->DeleteLocalRef(jpath);
+    update_errno();
+    return err;
 }
 
 int vnfs_fgetc(FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    return env->CallStaticIntMethod(clazzVNFS, fgetcMethodId, (jlong) stream);
 }
 
 int vnfs_fputc(int c, FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    return env->CallStaticIntMethod(clazzVNFS, fputcMethodId, c, (jlong) stream);
 }
 
 int vnfs_fputs(const char *s, FILE *stream) {
