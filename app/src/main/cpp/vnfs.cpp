@@ -120,6 +120,13 @@ size_t vnfs_fread(void *ptr, size_t size, size_t nitems,
 }
 
 int vnfs_fprintf(FILE *stream, const char *format, ...) {
+    va_list argp;
+    char buf[160];
+
+    va_start(argp, format);
+    vsprintf(buf, format, argp);
+    fputs(buf, stream);
+    va_end(argp);
     return 0;
 }
 
