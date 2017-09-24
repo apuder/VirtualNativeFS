@@ -27,6 +27,8 @@ public class VirtualNativeFSTest {
     native private static int testAppendToFile();
     native private static int testGetc();
     native private static int testPutc();
+    native private static int testPuts();
+    native private static int testGets();
     native private static int testTell();
     native private static int testSeekInFile();
     native private static int testUpdateFile();
@@ -62,6 +64,8 @@ public class VirtualNativeFSTest {
         testResult("testAppendToFile", testAppendToFile());
         testResult("testGetc", testGetc());
         testResult("testPutc", testPutc());
+        testResult("testGets", testGets());
+        testResult("testPuts", testPuts());
         testResult("testTell", testTell());
         testResult("testSeekInFile", testSeekInFile());
         testResult("testUpdateFile", testUpdateFile());

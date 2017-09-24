@@ -187,6 +187,51 @@ Java_org_puder_virtualnativefs_VirtualNativeFSTest_testPutc(JNIEnv *env, jclass 
 
 extern "C"
 JNIEXPORT jint JNICALL
+Java_org_puder_virtualnativefs_VirtualNativeFSTest_testPuts(JNIEnv *env, jclass type) {
+    BEGIN_TEST();
+    FILE* f = fopen("/sdcard/test_file", "w");
+    CHECK(fputs("Hello", f) >= 0);
+    CHECK(fputs(" ", f) >= 0);
+    CHECK(fputs("World!", f) >= 0);
+    fclose(f);
+    CHECK_CONTENT("/sdcard/test_file", "Hello World!");
+
+    // Remove file
+    CHECK(remove("/sdcard/test_file") == 0);
+
+    END_TEST();
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_puder_virtualnativefs_VirtualNativeFSTest_testGets(JNIEnv *env, jclass type) {
+    BEGIN_TEST();
+    const char* content = "HelloWorld!\nSecond line\nThird line";
+    FILE* f = fopen("/sdcard/test_file", "w");
+    fwrite(content, 1, strlen(content), f);
+    fclose(f);
+
+    char buf[50];
+    f = fopen("/sdcard/test_file", "r");
+    CHECK(fgets(buf, 6, f) == buf);
+    CHECK(strcmp(buf, "Hello") == 0);
+    CHECK(fgets(buf, 50, f) == buf);
+    CHECK(strcmp(buf, "World!\n") == 0);
+    CHECK(fgets(buf, 50, f) == buf);
+    CHECK(strcmp(buf, "Second line\n") == 0);
+    CHECK(fgets(buf, 50, f) == buf);
+    CHECK(strcmp(buf, "Third line") == 0);
+    CHECK(fgets(buf, 50, f) == NULL);
+    fclose(f);
+
+    // Remove file
+    CHECK(remove("/sdcard/test_file") == 0);
+
+    END_TEST();
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
 Java_org_puder_virtualnativefs_VirtualNativeFSTest_testSeekInFile(JNIEnv *env, jclass type) {
     BEGIN_TEST();
     const char* content = "0123456789abcdefghijklmnopqrstuvwxyz";
