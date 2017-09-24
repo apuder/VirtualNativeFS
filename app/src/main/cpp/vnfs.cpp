@@ -16,6 +16,8 @@ static jmethodID fwriteMethodId;
 static jmethodID freadMethodId;
 static jmethodID fgetcMethodId;
 static jmethodID fputcMethodId;
+static jmethodID fgetsMethodId;
+static jmethodID fputsMethodId;
 static jmethodID ftellMethodId;
 static jmethodID fseekMethodId;
 static jmethodID truncateMethodId;
@@ -44,6 +46,8 @@ Java_org_puder_virtualnativefs_VirtualNativeFS_init(JNIEnv *env, jclass type) {
     freadMethodId = env->GetStaticMethodID(type, "fread", "([BJJJ)J");
     fgetcMethodId = env->GetStaticMethodID(type, "fgetc", "(J)I");
     fputcMethodId = env->GetStaticMethodID(type, "fputc", "(IJ)I");
+    fgetsMethodId = env->GetStaticMethodID(type, "fgets", "(IJ)Ljava/lang/String;");
+    fputsMethodId = env->GetStaticMethodID(type, "fputs", "(Ljava/lang/String;J)I");
     ftellMethodId = env->GetStaticMethodID(type, "ftell", "(J)J");
     fseekMethodId = env->GetStaticMethodID(type, "fseek", "(JJI)I");
     truncateMethodId = env->GetStaticMethodID(type, "truncate", "(Ljava/lang/String;I)I");
@@ -139,11 +143,24 @@ int vnfs_fputc(int c, FILE *stream) {
 }
 
 int vnfs_fputs(const char *s, FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    jstring js = env->NewStringUTF(s);
+    jint err = env->CallStaticIntMethod(clazzVNFS, fputsMethodId, js, (jlong) stream);
+    env->DeleteLocalRef(js);
+    update_errno();
+    return err;
 }
 
 char *vnfs_fgets(char *s, int n, FILE *stream) {
-    return 0;
+    JNIEnv* env = getEnv();
+    jstring ptr = (jstring) env->CallStaticObjectMethod(clazzVNFS, fgetsMethodId, n, (jlong) stream);
+    if (ptr == NULL) {
+        return NULL;
+    }
+    const char* str = env->GetStringUTFChars(ptr, NULL);
+    strcpy(s, str);
+    env->ReleaseStringUTFChars(ptr, str);
+    return s;
 }
 
 int vnfs_fscanf(FILE *stream, const char *format, ... ) {

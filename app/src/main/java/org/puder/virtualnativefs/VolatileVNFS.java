@@ -214,12 +214,30 @@ public class VolatileVNFS implements VirtualNativeFSAPI {
 
     @Override
     public int fputs(String s, long stream) {
+        for (int i = 0; i < s.length(); i++) {
+            fputc(s.charAt(i), stream);
+        }
         return 0;
     }
 
     @Override
-    public String fgets(String s, int n, long stream) {
-        return null;
+    public String fgets(int n, long stream) {
+        FileDescriptor fd = fileDescriptors.get(stream);
+        if (fd.pos == fd.content.size()) {
+            return null;
+        }
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < n - 1; i++) {
+            if (fd.pos == fd.content.size()) {
+                break;
+            }
+            byte ch = fd.content.get(fd.pos++);
+            s.append((char) ch);
+            if (ch == '\n') {
+                break;
+            }
+        }
+        return s.toString();
     }
 
     @Override

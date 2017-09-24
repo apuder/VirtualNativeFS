@@ -15,7 +15,7 @@ public interface VirtualNativeFSAPI {
     int fgetc(long stream);
     int fputc(int c, long stream);
     int fputs(String s, long stream);
-    String fgets(String s, int n, long stream);
+    String fgets(int n, long stream);
     int fscanf(long stream, String format);
     int stat(String path, long XXXX);
 }
